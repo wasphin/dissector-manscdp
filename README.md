@@ -16,8 +16,8 @@ Wireshark GB/T 28181 协议解析插件.
 TODO: 待后续根据使用场景补充示例.
 
 基本引用方式:
-1. `query.cmdtype == "Catelog"`: 过滤查询目录请求;
-1. `reponse.cmdtype == "Catelog"`: 过滤查询目录回复请求;
+1. `query.cmdtype == "Catalog"`: 过滤查询目录请求;
+1. `reponse.cmdtype == "Catalog"`: 过滤查询目录回复请求;
 
 ## 关于 [XML](https://wiki.wireshark.org/XML) 部分解析
 
