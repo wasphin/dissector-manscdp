@@ -1,6 +1,6 @@
 <?
  wireshark:protocol
- proto_name="manscdp-respones"
+ proto_name="manscdp-response"
  media="Application/MANSCDP+xml"
  description="Monitoring and Alarming Network System Control Description Protocol - Response"
  hierarchy="no"
