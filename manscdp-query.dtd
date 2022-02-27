@@ -1,0 +1,47 @@
+<?
+ wireshark:protocol
+ proto_name="manscdp-query"
+ media="Application/MANSCDP+xml"
+ description="Monitoring and Alarming Network System Control Description Protocol - Query"
+ hierarchy="no"
+ ?>
+
+<!--
+  -- DTD for MANSCDP defined in GB/T 28181.
+  --
+  -- Copyright (C) 2022 Xiaofeng Wang <wasphin AT gmail.com>
+  -- SPDX-License-Identifier: GPL-3.0-only
+  -->
+
+<!-- https://wiki.wireshark.org/XML -->
+<!-- https://www.xmlfiles.com/dtd/dtd-elements/ -->
+
+<!ELEMENT Query (
+ Address,
+ AlarmMethod,
+ CmdType,
+ DeviceID,
+ EndAlarmPriority,
+ EndTime,
+ FilePath,
+ RecorderID,
+ SN,
+ Secrecy,
+ StartAlarmPriority,
+ StartTime,
+ Type
+ )>
+
+<!ELEMENT Address (#CDATA)>
+<!ELEMENT AlarmMethod (#CDATA)>
+<!ELEMENT CmdType (#CDATA)>
+<!ELEMENT DeviceID (#CDATA)>
+<!ELEMENT EndAlarmPriority (#CDATA)>
+<!ELEMENT EndTime (#CDATA)>
+<!ELEMENT FilePath (#CDATA)>
+<!ELEMENT RecorderID (#CDATA)>
+<!ELEMENT SN (#CDATA)>
+<!ELEMENT Secrecy (#CDATA)>
+<!ELEMENT StartAlarmPriority (#CDATA)>
+<!ELEMENT StartTime (#CDATA)>
+<!ELEMENT Type (#CDATA)>

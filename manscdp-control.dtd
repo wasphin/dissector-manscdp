@@ -1,0 +1,35 @@
+<?
+ wireshark:protocol
+ proto_name="manscdp-control"
+ media="Application/MANSCDP+xml"
+ description="Monitoring and Alarming Network System Control Description Protocol - Control"
+ hierarchy="no"
+ ?>
+
+<!--
+  -- DTD for MANSCDP defined in GB/T 28181.
+  --
+  -- Copyright (C) 2022 Xiaofeng Wang <wasphin AT gmail.com>
+  -- SPDX-License-Identifier: GPL-3.0-only
+  -->
+
+<!-- https://wiki.wireshark.org/XML -->
+<!-- https://www.xmlfiles.com/dtd/dtd-elements/ -->
+
+<!ELEMENT Control (
+ CmdType,
+ DeviceID,
+ Info,
+ PTZCmd,
+ RecordCmd,
+ SN
+ )>
+
+<!ELEMENT CmdType (#CDATA)>
+<!ELEMENT DeviceID (#CDATA)>
+<!ELEMENT Info (ControlPriority)>
+<!ELEMENT PTZCmd (#CDATA)>
+<!ELEMENT RecordCmd (#CDATA)>
+<!ELEMENT SN (#CDATA)>
+
+<!ELEMENT ControlPriority (#CDATA)>

@@ -1,0 +1,126 @@
+<?
+ wireshark:protocol
+ proto_name="manscdp-respones"
+ media="Application/MANSCDP+xml"
+ description="Monitoring and Alarming Network System Control Description Protocol - Response"
+ hierarchy="no"
+ ?>
+
+<!--
+  -- DTD for MANSCDP defined in GB/T 28181.
+  --
+  -- Copyright (C) 2022 Xiaofeng Wang <wasphin AT gmail.com>
+  -- SPDX-License-Identifier: GPL-3.0-only
+  -->
+
+<!-- https://wiki.wireshark.org/XML -->
+<!-- https://www.xmlfiles.com/dtd/dtd-elements/ -->
+
+<!ELEMENT Response (
+ AlarmStatus,
+ CmdType,
+ DeviceID,
+ DeviceList,
+ DeviceTime,
+ Encode,
+ Firmware,
+ Manufacturer,
+ Model,
+ Name,
+ Online,
+ Record,
+ RecordList,
+ Result,
+ SN,
+ Status,
+ SumNum
+ )>
+
+<!-- AlarmStatus, DeviceList, RecordList -->
+<!ATTLIST AlarmStatus Num CDATA "0">
+<!ELEMENT AlarmStatus (Item*)>
+
+<!ATTLIST DeviceList Num CDATA "0">
+<!ELEMENT DeviceList (Item*)>
+
+<!ATTLIST RecordList Num CDATA "0">
+<!ELEMENT RecordList (Item*)>
+
+<!ELEMENT Item (
+ Address,
+ Block,
+ CertNum,
+ Certifiable,
+ CivilCode,
+ DeviceID,
+ DutyStatus,
+ EndTime,
+ ErrCode,
+ Event,
+ FilePath,
+ IPAddress,
+ Latitude,
+ Longitude,
+ Manufacturer,
+ Model,
+ Name,
+ Owner,
+ ParentID,
+ Parental,
+ Password,
+ Port,
+ RecorderID,
+ SafetyWay,
+ Secrecy,
+ StartTime,
+ Status,
+ Type
+ )>
+
+<!ELEMENT Address (#CDATA)>
+<!ELEMENT AlarmDescription (#CDATA)>
+<!ELEMENT AlarmMethod (#CDATA)>
+<!ELEMENT AlarmPriority (#CDATA)>
+<!ELEMENT AlarmTime (#CDATA)>
+<!ELEMENT Block (#CDATA)>
+<!ELEMENT CertNum (#CDATA)>
+<!ELEMENT Certifiable (#CDATA)>
+<!ELEMENT CivilCode (#CDATA)>
+<!ELEMENT CmdType (#CDATA)>
+<!ELEMENT ControlPriority (#CDATA)>
+<!ELEMENT DeviceID (#CDATA)>
+<!ELEMENT DeviceTime (#CDATA)>
+<!ELEMENT DutyStatus (#CDATA)>
+<!ELEMENT Encode (#CDATA)>
+<!ELEMENT EndAlarmPriority (#CDATA)>
+<!ELEMENT EndTime (#CDATA)>
+<!ELEMENT ErrCode (#CDATA)>
+<!ELEMENT Event (#CDATA)>
+<!ELEMENT FilePath (#CDATA)>
+<!ELEMENT Firmware (#CDATA)>
+<!ELEMENT IPAddress (#CDATA)>
+<!ELEMENT Latitude (#CDATA)>
+<!ELEMENT Longitude (#CDATA)>
+<!ELEMENT Manufacturer (#CDATA)>
+<!ELEMENT Model (#CDATA)>
+<!ELEMENT Name (#CDATA)>
+<!ELEMENT NotifyType (#CDATA)>
+<!ELEMENT Online (#CDATA)>
+<!ELEMENT Owner (#CDATA)>
+<!ELEMENT PTZCmd (#CDATA)>
+<!ELEMENT ParentID (#CDATA)>
+<!ELEMENT Parental (#CDATA)>
+<!ELEMENT Password (#CDATA)>
+<!ELEMENT Port (#CDATA)>
+<!ELEMENT Record (#CDATA)>
+<!ELEMENT RecordCmd (#CDATA)>
+<!ELEMENT RecorderID (#CDATA)>
+<!ELEMENT Result (#CDATA)>
+<!ELEMENT SN (#CDATA)>
+<!ELEMENT SafetyWay (#CDATA)>
+<!ELEMENT Secrecy (#CDATA)>
+<!ELEMENT StartAlarmPriority (#CDATA)>
+<!ELEMENT StartTime (#CDATA)>
+<!ELEMENT Status (#CDATA)>
+<!ELEMENT SumNum (#CDATA)>
+<!ELEMENT Type (#CDATA)>
