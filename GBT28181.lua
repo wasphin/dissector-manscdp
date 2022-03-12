@@ -148,6 +148,8 @@ dissect_manscdp = function(tvbuf, pktinfo, manscdp_root)
   for _, t in pairs(manscdp) do
     local cmd_type = t.type()
     if cmd_type then
+      manscdp_root:add(pf_cmd_type, cmd_type.range)
+
       -- 使用相应的 dissector 进行解析
       local dissector = t.dissectors[tostring(cmd_type)]
       if dissector then
@@ -163,12 +165,10 @@ end
 
 manscdp.Query.commands.Catalog.dissector
   = function(tvbuf, pktinfo, manscdp_tree)
-    manscdp_tree:add(pf_cmd_type, manscdp.Query.type().range)
 end
 
 manscdp.Response.commands.Catalog.dissector
   = function(tvbuf, pktinfo, manscdp_tree)
-    manscdp_tree:add(pf_cmd_type, manscdp.Response.type().range)
 end
 
 ------------------------------------------------------------------------------
