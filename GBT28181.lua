@@ -149,7 +149,6 @@ dissect_manscdp = function(tvbuf, pktinfo, manscdp_root)
     local cmd_type = t.type()
     if cmd_type then
       -- 使用相应的 dissector 进行解析
-      local cmd = t[tostring(cmd_type)]
       local dissector = t.dissectors[tostring(cmd_type)]
       if dissector then
         dissector(tvbuf, pktinfo, manscdp_root)
