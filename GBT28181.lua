@@ -59,6 +59,14 @@ LM_DBG("Lua version = %s", _VERSION)
 
 --------------------------------------------------------------------------------
 
+local pf_cmd_type = ProtoField.string(plugin_info.name .. ".CmdType", "Command Type", BASE_NONE)
+
+proto.fields = {
+  pf_cmd_type
+}
+
+--------------------------------------------------------------------------------
+
 local manscdp_media_type = "Application/MANSCDP+xml"
 
 -- 参考: http://www.voidcn.com/article/p-sqwlhgrw-gg.html
@@ -66,14 +74,41 @@ local media_type_table      = DissectorTable.get("media_type")
 local manscdp_xml_dissector = media_type_table:get_dissector(manscdp_media_type)
 local text_xml_dissector    = media_type_table:get_dissector("text/xml")
 
-local dissect_manscdp = function() end
+local manscdp = {
+  Control  = { name = "Control",  field = "control",
+               dissectors = {},
+               commands = {}},
+  Notify   = { name = "Notify",   field = "notify",
+               dissectors = {},
+               commands = {}},
+  Query    = { name = "Query",    field = "query",
+               dissectors = {},
+               commands = { Catalog = { type = "Catalog" } } },
+  Response = { name = "Response", field = "response",
+               dissectors = {},
+               commands = { Catalog = { type = "Catalog" } } }
+}
+
+for _, t in pairs(manscdp) do
+  t.type = Field.new(t.field .. ".cmdtype")
+end
 
 function proto.init()
+  for _, t in pairs(manscdp) do
+    for _, cmd in pairs(t.commands) do
+      if cmd.dissector and not t.dissectors[cmd.type] then
+        LM_DBG("register dissector for " .. t.name .. "." .. cmd.type)
+        t.dissectors[cmd.type] = cmd.dissector
+      end
+    end
+  end
 end
 
 local sip_content_type   = Field.new("sip.Content-Type")
 local sip_content_length = Field.new("sip.Content-Length")
 local sip_msg_body       = Field.new("sip.msg_body")
+
+local dissect_manscdp = function() end
 
 function proto.dissector(tvbuf, pktinfo, root)
   local ct = sip_content_type()
@@ -107,8 +142,34 @@ register_postdissector(proto)
 -- `-- eXtensible Markup Language
 --
 dissect_manscdp = function(tvbuf, pktinfo, manscdp_root)
-  -- 使用 xml 协议解析, 随后再收集相关字段进行提取
+  -- 使用 xml 协议解析, 随后再提取关心的字段
   manscdp_xml_dissector:call(tvbuf, pktinfo, manscdp_root)
+
+  for _, t in pairs(manscdp) do
+    local cmd_type = t.type()
+    if cmd_type then
+      -- 使用相应的 dissector 进行解析
+      local cmd = t[tostring(cmd_type)]
+      local dissector = t.dissectors[tostring(cmd_type)]
+      if dissector then
+        dissector(tvbuf, pktinfo, manscdp_root)
+      end
+
+      break
+    end
+  end
+end
+
+------------------------------------------------------------------------------
+
+manscdp.Query.commands.Catalog.dissector
+  = function(tvbuf, pktinfo, manscdp_tree)
+    manscdp_tree:add(pf_cmd_type, manscdp.Query.type().range)
+end
+
+manscdp.Response.commands.Catalog.dissector
+  = function(tvbuf, pktinfo, manscdp_tree)
+    manscdp_tree:add(pf_cmd_type, manscdp.Response.type().range)
 end
 
 ------------------------------------------------------------------------------
