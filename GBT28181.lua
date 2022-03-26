@@ -26,9 +26,9 @@ local plugin_info = {
 ------------------------------------------------------------------------------
 -- Verify that the Wireshark version matches our requirement.
 
---·Unfortunately,·the·older·Wireshark/Tshark·versions·have·bugs,
--- and·part·of·the·point of·this·script·is·to·test·those·bugs·are·now·fixed.
---·So·we·need·to·check·the·version end·error·out·if·it's·too·old.
+-- Unfortunately, the older Wireshark/Tshark versions have bugs,
+-- and part of the point of this script is to test those bugs are now fixed.
+-- So we need to check the version end error out if it's too old.
 local major, minor, micro = get_version():match("(%d+)%.(%d+)%.(%d+)")
 if major and tonumber(major) <= 1 and ((tonumber(minor) <= 10) or (tonumber(minor) == 11 and tonumber(micro) < 3)) then
   error("Sorry, but your Wireshark/Tshark version ("
@@ -36,10 +36,10 @@ if major and tonumber(major) <= 1 and ((tonumber(minor) <= 10) or (tonumber(mino
         .. "This script needs Wireshark/Tshark version 1.11.3 or higher.\n")
 end
 
---·more·sanity·checking
---·verify·we·have·the·ProtoExpert·class·in·wireshark,
---·as·that's·the·newest·thing·this·file·uses
-assert(ProtoExpert.new, "Wireshark·does·not·have·the·ProtoExpert·class,·so·it's·too·old·-·get·the·latest·1.11.3·or·higher")
+-- more sanity checking
+-- verify we have the ProtoExpert class in wireshark,
+-- as that's the newest thing this file uses
+assert(ProtoExpert.new, "Wireshark does not have the ProtoExpert class, so it's too old - get the latest 1.11.3 or higher")
 
 local prefs_changed = function() end
 
@@ -138,8 +138,9 @@ register_postdissector(proto)
 -- \brief 解析 manscdp 协议
 --
 -- GB/T 28181 MANSCDP
--- `-- TODO: 关心字段
 -- `-- eXtensible Markup Language
+-- `-- Command Type: XXX
+-- `-- ...
 --
 dissect_manscdp = function(tvbuf, pktinfo, manscdp_root)
   -- 使用 xml 协议解析, 随后再提取关心的字段
