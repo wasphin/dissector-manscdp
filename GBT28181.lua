@@ -60,9 +60,11 @@ LM_DBG("Lua version = %s", _VERSION)
 --------------------------------------------------------------------------------
 
 local pf_cmd_type = ProtoField.string(plugin_info.name .. ".CmdType", "Command Type", BASE_NONE)
+local pf_sn       = ProtoField.string(plugin_info.name .. ".SN", "SN", BASE_NONE)
 
 proto.fields = {
-  pf_cmd_type
+  pf_cmd_type,
+  pf_sn
 }
 
 --------------------------------------------------------------------------------
@@ -91,6 +93,7 @@ local manscdp = {
 
 for _, t in pairs(manscdp) do
   t.type = Field.new(t.field .. ".cmdtype")
+  t.sn   = Field.new(t.field .. ".sn")
 end
 
 function proto.init()
@@ -140,6 +143,7 @@ register_postdissector(proto)
 -- GB/T 28181 MANSCDP
 -- `-- eXtensible Markup Language
 -- `-- Command Type: XXX
+-- `-- SN: XXX
 -- `-- ...
 --
 dissect_manscdp = function(tvbuf, pktinfo, manscdp_root)
@@ -149,7 +153,13 @@ dissect_manscdp = function(tvbuf, pktinfo, manscdp_root)
   for _, t in pairs(manscdp) do
     local cmd_type = t.type()
     if cmd_type then
+      local sn = t.sn()
+
       manscdp_root:add(pf_cmd_type, cmd_type.range)
+      manscdp_root:add(pf_sn, sn.range)
+      pktinfo.cols.info:append(
+        "SN: " .. tostring(sn) .. ", " ..
+        t.name .. "." .. tostring(cmd_type))
 
       -- 使用相应的 dissector 进行解析
       local dissector = t.dissectors[tostring(cmd_type)]
