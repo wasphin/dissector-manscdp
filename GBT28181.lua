@@ -59,12 +59,116 @@ LM_DBG("Lua version = %s", _VERSION)
 
 --------------------------------------------------------------------------------
 
-local pf_cmd_type = ProtoField.string(plugin_info.name .. ".CmdType", "Command Type", BASE_NONE)
-local pf_sn       = ProtoField.string(plugin_info.name .. ".SN", "SN", BASE_NONE)
+local pf_any
+  = ProtoField.bytes (plugin_info.name .. ".Any",
+                      "Place Holder for Anything",
+                      BASE_NONE)
+local pf_sn
+  = ProtoField.string(plugin_info.name .. ".SN",
+                      "SN",
+                      BASE_NONE)
+local pf_cmd_type
+  = ProtoField.string(plugin_info.name .. ".CmdType",
+                      "CmdType",
+                      BASE_NONE)
+
+----------------------------------------
+-- Control Command Fields
+
+-- A.3.1, 表 A.3, 指令格式
+
+-- byte 1
+-- use string to display hex values
+local pf_ptz_cmd_magic
+  = ProtoField.bytes (plugin_info.name .. ".PTZCmd.Magic",
+                      "Magic Code(A5H)",
+                      BASE_NONE)
+-- byte 2, high 4 bits
+local pf_ptz_cmd_version
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Version",
+                      "Version",
+                      BASE_HEX, { [0] = "1.0" }, 0xF0)
+-- byte 2, low 4 bits
+local pf_ptz_cmd_check_bits
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.CheckBits",
+                      "Check Bits",
+                      BASE_HEX, nil, 0x0F)
+-- byte 8
+local pf_ptz_cmd_checksum
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Checksum",
+                      "Checksum",
+                      BASE_HEX)
+
+-- byte 4, bit 5
+local pf_ptz_cmd_zoom_out
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Out",
+                      "PTZ Zoom Out",
+                      BASE_DEC, nil, 0x20)
+-- byte 4, bit 4
+local pf_ptz_cmd_zoom_in
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.In",
+                      "PTZ Zoom In",
+                      BASE_DEC, nil, 0x10)
+-- byte 4, bit 3
+local pf_ptz_cmd_up
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Up",
+                      "PTZ Tilt Up",
+                      BASE_DEC, nil, 0x08)
+-- byte 4, bit 2
+local pf_ptz_cmd_down
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Down",
+                      "PTZ Tilt Down",
+                      BASE_DEC, nil, 0x04)
+-- byte 4, bit 1
+local pf_ptz_cmd_left
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Left",
+                      "PTZ Pan Left",
+                      BASE_DEC, nil, 0x02)
+-- byte 4, bit 0
+local pf_ptz_cmd_right
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Right",
+                      "PTZ Pan Right",
+                      BASE_DEC, nil, 0x01)
+
+-- byte 5
+local pf_ptz_cmd_speed_pan
+  = ProtoField.uint8 (plugin_info.name .. "PTZCmd.Speed.Pan",
+                      "PTZ Pan Speed",
+                      BASE_DEC)
+-- byte 6
+local pf_ptz_cmd_speed_tilt
+  = ProtoField.uint8 (plugin_info.name .. "PTZCmd.Speed.Tilt",
+                      "PTZ Tilt Speed",
+                      BASE_DEC)
+-- byte 7
+local pf_ptz_cmd_speed_zoom
+  = ProtoField.uint8 (plugin_info.name .. "PTZCmd.Speed.Zoom",
+                      "PTZ Zoom Speed",
+                      BASE_DEC, nil, 0xF0)
+
+----------------------------------------
 
 proto.fields = {
+  pf_any,
+
+  pf_sn,
   pf_cmd_type,
-  pf_sn
+
+  pf_ptz_cmd_magic,
+  pf_ptz_cmd_version,
+  pf_ptz_cmd_check_bits,
+  pf_ptz_cmd_checksum,
+
+  pf_ptz_cmd_zoom_out,
+  pf_ptz_cmd_zoom_in,
+  pf_ptz_cmd_up,
+  pf_ptz_cmd_down,
+  pf_ptz_cmd_left,
+  pf_ptz_cmd_right,
+
+  pf_ptz_cmd_speed_pan,
+  pf_ptz_cmd_speed_tilt,
+  pf_ptz_cmd_speed_zoom
 }
 
 --------------------------------------------------------------------------------
@@ -76,32 +180,52 @@ local media_type_table      = DissectorTable.get("media_type")
 local manscdp_xml_dissector = media_type_table:get_dissector(manscdp_media_type)
 local text_xml_dissector    = media_type_table:get_dissector("text/xml")
 
+--  command -> command-details
 local manscdp = {
-  Control  = { name = "Control",  field = "control",
-               dissectors = {},
-               commands = {}},
-  Notify   = { name = "Notify",   field = "notify",
-               dissectors = {},
-               commands = {}},
-  Query    = { name = "Query",    field = "query",
-               dissectors = {},
-               commands = { Catalog = { type = "Catalog" } } },
-  Response = { name = "Response", field = "response",
-               dissectors = {},
-               commands = { Catalog = { type = "Catalog" } } }
+  Control  = {
+    dissectors = {},
+    commands = {
+      DeviceControl = {
+        PTZCmd = {}
+      }
+    }
+  },
+  Notify   = {
+    dissectors = {},
+    commands = {}
+  },
+  Query    = {
+    dissectors = {},
+    commands = {
+      Catalog = {}
+    }
+  },
+  Response = {
+    dissectors = {},
+    commands = {
+      Catalog = {}
+    }
+  }
 }
 
-for _, t in pairs(manscdp) do
-  t.type = Field.new(t.field .. ".cmdtype")
-  t.sn   = Field.new(t.field .. ".sn")
+for cmd_name, cmd in pairs(manscdp) do
+  -- 相关 field 已在 DTD 中注册, 为全小写.
+  cmd.sn   = Field.new(cmd_name:lower() .. ".sn")
+  cmd.type = Field.new(cmd_name:lower() .. ".cmdtype")
+  for sub_cmd_name, sub_cmd in pairs(cmd.commands) do
+    for field_name, field in pairs(sub_cmd) do
+      field.pf = Field.new(cmd_name:lower() .. "." .. field_name:lower())
+    end
+  end
 end
 
 function proto.init()
-  for _, t in pairs(manscdp) do
-    for _, cmd in pairs(t.commands) do
-      if cmd.dissector and not t.dissectors[cmd.type] then
-        LM_DBG("register dissector for " .. t.name .. "." .. cmd.type)
-        t.dissectors[cmd.type] = cmd.dissector
+  -- register all sub-dissectors
+  for cmd_name, cmd in pairs(manscdp) do
+    for sub_cmd_name, sub_cmd in pairs(cmd.commands) do
+      if sub_cmd.dissector and not cmd.dissectors[sub_cmd_name] then
+        LM_DBG("register dissector for " .. cmd_name .. "." .. sub_cmd_name)
+        cmd.dissectors[sub_cmd_name] = sub_cmd.dissector
       end
     end
   end
@@ -141,28 +265,26 @@ register_postdissector(proto)
 -- \brief 解析 manscdp 协议
 --
 -- GB/T 28181 MANSCDP
+-- `-- MANSCDP
+-- |   `-- SN
+-- |   `-- CmdType
+-- |   `-- ...
 -- `-- eXtensible Markup Language
--- `-- Command Type: XXX
--- `-- SN: XXX
--- `-- ...
 --
-dissect_manscdp = function(tvbuf, pktinfo, manscdp_root)
+dissect_manscdp = function(tvbuf, pktinfo, manscdp_tree)
+  local manscdp_root = manscdp_tree:add(pf_any, tvbuf:range()):set_text("MANSCDP")
+
   -- 使用 xml 协议解析, 随后再提取关心的字段
-  manscdp_xml_dissector:call(tvbuf, pktinfo, manscdp_root)
+  manscdp_xml_dissector:call(tvbuf, pktinfo, manscdp_tree)
 
-  for _, t in pairs(manscdp) do
-    local cmd_type = t.type()
+  for name, cmd in pairs(manscdp) do
+    local cmd_type = cmd.type()
     if cmd_type then
-      local sn = t.sn()
-
-      manscdp_root:add(pf_cmd_type, cmd_type.range)
-      manscdp_root:add(pf_sn, sn.range)
-      pktinfo.cols.info:append(
-        "SN: " .. tostring(sn) .. ", " ..
-        t.name .. "." .. tostring(cmd_type))
+      manscdp_root:add(pf_sn, cmd.sn().range)
+      manscdp_root:add(pf_cmd_type, cmd_type.range):append_text("(" .. name .. ")")
 
       -- 使用相应的 dissector 进行解析
-      local dissector = t.dissectors[tostring(cmd_type)]
+      local dissector = cmd.dissectors[tostring(cmd_type)]
       if dissector then
         dissector(tvbuf, pktinfo, manscdp_root)
       end
@@ -173,6 +295,32 @@ dissect_manscdp = function(tvbuf, pktinfo, manscdp_root)
 end
 
 ------------------------------------------------------------------------------
+
+manscdp.Control.commands.DeviceControl.dissector = function(tvbuf, pktinfo, manscdp_tree)
+  local ptz_cmd = manscdp.Control.commands.DeviceControl.PTZCmd.pf()
+  if ptz_cmd then
+    local ptz_cmd_tvb = ByteArray.new(ptz_cmd.value):tvb("PTZCmd")
+
+    local ptz_cmd_tree = manscdp_tree:add(pf_any, ptz_cmd.range):set_text("PTZCmd: " .. ptz_cmd.value)
+    ptz_cmd_tree:add(pf_ptz_cmd_magic,      ptz_cmd_tvb(0, 1));
+
+    ptz_cmd_tree:add(pf_ptz_cmd_version,    ptz_cmd_tvb(1, 1));
+    ptz_cmd_tree:add(pf_ptz_cmd_check_bits, ptz_cmd_tvb(1, 1));
+
+    ptz_cmd_tree:add(pf_ptz_cmd_zoom_out,   ptz_cmd_tvb(3, 1));
+    ptz_cmd_tree:add(pf_ptz_cmd_zoom_in,    ptz_cmd_tvb(3, 1));
+    ptz_cmd_tree:add(pf_ptz_cmd_up,         ptz_cmd_tvb(3, 1));
+    ptz_cmd_tree:add(pf_ptz_cmd_down,       ptz_cmd_tvb(3, 1));
+    ptz_cmd_tree:add(pf_ptz_cmd_left,       ptz_cmd_tvb(3, 1));
+    ptz_cmd_tree:add(pf_ptz_cmd_right,      ptz_cmd_tvb(3, 1));
+
+    ptz_cmd_tree:add(pf_ptz_cmd_speed_pan,  ptz_cmd_tvb(4, 1));
+    ptz_cmd_tree:add(pf_ptz_cmd_speed_tilt, ptz_cmd_tvb(5, 1));
+    ptz_cmd_tree:add(pf_ptz_cmd_speed_zoom, ptz_cmd_tvb(6, 1));
+
+    ptz_cmd_tree:add(pf_ptz_cmd_checksum,   ptz_cmd_tvb(7, 1));
+  end
+end
 
 manscdp.Query.commands.Catalog.dissector
   = function(tvbuf, pktinfo, manscdp_tree)
