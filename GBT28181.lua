@@ -251,11 +251,19 @@ function proto.dissector(tvbuf, pktinfo, root)
 
   if (ct:lower() == manscdp_media_type:lower()) then
     -- https://www.wireshark.org/docs//wsdg_html_chunked/lua_module_Field.html
-    -- TODO: Converting GB2312 to UTF-8
-    local body = sip_msg_body().range:tvb()
-    local manscdp_tree = root:add(proto, tvbuf)
+    local tvb_body = nil
+
+    local body_range = sip_msg_body().range
+    if tostring(body_range:string()):find("GB2312") then
+      local body = body_range:string(ENC_GB18030)
+      tvb_body = ByteArray.tvb(ByteArray.new(body, true), "body")
+    else
+      tvb_body = body_range:tvb()
+    end
+
+    local manscdp_tree = root:add(proto, tvb_body)
     manscdp_tree:set_text("GB/T 28181 MANSCDP")
-    dissect_manscdp(body, pktinfo, manscdp_tree)
+    dissect_manscdp(tvb_body, pktinfo, manscdp_tree)
   end
 end
 
