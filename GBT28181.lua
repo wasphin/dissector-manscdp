@@ -236,6 +236,8 @@ local sip_content_type   = Field.new("sip.Content-Type")
 local sip_content_length = Field.new("sip.Content-Length")
 local sip_msg_body       = Field.new("sip.msg_body")
 
+local xml_encoding       = Field.new("xml.xmlpi.xml.encoding")
+
 local dissect_manscdp = function() end
 
 function proto.dissector(tvbuf, pktinfo, root)
@@ -256,7 +258,7 @@ function proto.dissector(tvbuf, pktinfo, root)
 
     local body_range = sip_msg_body().range
 
-    if (version_code < 4001000) and tostring(body_range:string()):find("GB2312") then
+    if (version_code < 4001000) and (tostring(xml_encoding()):lower() ~= "utf-8") then
       local body = body_range:string(ENC_GB18030)
       tvb_body = ByteArray.tvb(ByteArray.new(body, true), "Decoded GB2312 body")
     else
