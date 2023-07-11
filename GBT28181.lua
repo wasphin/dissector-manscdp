@@ -29,8 +29,9 @@ local plugin_info = {
 -- Unfortunately, the older Wireshark/Tshark versions have bugs,
 -- and part of the point of this script is to test those bugs are now fixed.
 -- So we need to check the version end error out if it's too old.
-local major, minor, micro = get_version():match("(%d+)%.(%d+)%.(%d+)")
-if major and tonumber(major) <= 1 and ((tonumber(minor) <= 10) or (tonumber(minor) == 11 and tonumber(micro) < 3)) then
+local major, minor, patch = get_version():match("(%d+)%.(%d+)%.(%d+)")
+local version_code = tonumber(major) * 1000 * 1000 + tonumber(minor) * 1000 + tonumber(patch)
+if version_code < 1011003 then
   error("Sorry, but your Wireshark/Tshark version ("
         .. get_version() .. ") is too old for this script!\n"
         .. "This script needs Wireshark/Tshark version 1.11.3 or higher.\n")
@@ -254,9 +255,10 @@ function proto.dissector(tvbuf, pktinfo, root)
     local tvb_body = nil
 
     local body_range = sip_msg_body().range
-    if tostring(body_range:string()):find("GB2312") then
+
+    if (version_code < 4001000) and tostring(body_range:string()):find("GB2312") then
       local body = body_range:string(ENC_GB18030)
-      tvb_body = ByteArray.tvb(ByteArray.new(body, true), "body")
+      tvb_body = ByteArray.tvb(ByteArray.new(body, true), "Decoded GB2312 body")
     else
       tvb_body = body_range:tvb()
     end
