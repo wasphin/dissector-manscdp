@@ -100,6 +100,67 @@ local pf_ptz_cmd_checksum
                       "Checksum",
                       BASE_HEX)
 
+-- byte 4, bit 4~7
+local ptz_cmd_types = {
+  -- 0x0~0x3, PTZ
+  [0] = "PTZ", [1] = "PTZ" , [2] = "PTZ", [3] = "PTZ",
+  -- 0x4 Focus/Iris
+  [4] = "FI",
+  -- 0x8, Preset
+  [8] = "Preset"
+}
+local pf_ptz_cmd_type
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Type",
+                     "PTZ Cmd Type",
+                     BASE_DEC, ptz_cmd_types, 0xf0)
+
+-------- Preset
+-- byte 4, bit 0~1
+local pf_ptz_cmd_preset_action
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Preset.Action",
+                     "PTZ Preset Action",
+                     BASE_DEC, {"Set", "Load", "Delete"}, 0x03)
+-- byte 6
+local pf_ptz_cmd_preset_index
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Preset.Index",
+                     "PTZ Preset Index",
+                     BASE_DEC, nil, 0xff)
+
+-------- Focus/Iris
+-- byte 4, bit 3
+local pf_ptz_cmd_fi_iris_in
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Iris.In",
+                      "PTZ Iris In",
+                      BASE_DEC, nil, 0x08)
+-- byte 4, bit 2
+local pf_ptz_cmd_fi_iris_out
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Iris.Out",
+                      "PTZ Iris Out",
+                      BASE_DEC, nil, 0x04)
+-- byte 4, bit 1
+local pf_ptz_cmd_fi_focus_in
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Focus.In",
+                      "PTZ Focus In",
+                      BASE_DEC, nil, 0x02)
+-- byte 4, bit 0
+local pf_ptz_cmd_fi_focus_out
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Focus.Out",
+                      "PTZ Focus Out",
+                      BASE_DEC, nil, 0x01)
+
+-- byte 5
+local pf_ptz_cmd_fi_iris_size
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Iris.Size",
+                      "PTZ Iris Size",
+                      BASE_DEC)
+
+-- byte 6
+local pf_ptz_cmd_fi_focus_size
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Focus.Size",
+                      "PTZ Focus Size",
+                      BASE_DEC)
+
+-------- PTZ
 -- byte 4, bit 5
 local pf_ptz_cmd_zoom_out
   = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Out",
@@ -133,17 +194,17 @@ local pf_ptz_cmd_right
 
 -- byte 5
 local pf_ptz_cmd_speed_pan
-  = ProtoField.uint8 (plugin_info.name .. "PTZCmd.Speed.Pan",
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Speed.Pan",
                       "PTZ Pan Speed",
                       BASE_DEC)
 -- byte 6
 local pf_ptz_cmd_speed_tilt
-  = ProtoField.uint8 (plugin_info.name .. "PTZCmd.Speed.Tilt",
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Speed.Tilt",
                       "PTZ Tilt Speed",
                       BASE_DEC)
 -- byte 7
 local pf_ptz_cmd_speed_zoom
-  = ProtoField.uint8 (plugin_info.name .. "PTZCmd.Speed.Zoom",
+  = ProtoField.uint8 (plugin_info.name .. ".PTZCmd.Speed.Zoom",
                       "PTZ Zoom Speed",
                       BASE_DEC, nil, 0xF0)
 
@@ -159,6 +220,18 @@ proto.fields = {
   pf_ptz_cmd_version,
   pf_ptz_cmd_check_bits,
   pf_ptz_cmd_checksum,
+
+  pf_ptz_cmd_type,
+
+  pf_ptz_cmd_preset_action,
+  pf_ptz_cmd_preset_index,
+
+  pf_ptz_cmd_fi_focus_in,
+  pf_ptz_cmd_fi_focus_out,
+  pf_ptz_cmd_fi_focus_size,
+  pf_ptz_cmd_fi_iris_in,
+  pf_ptz_cmd_fi_iris_out,
+  pf_ptz_cmd_fi_iris_size,
 
   pf_ptz_cmd_zoom_out,
   pf_ptz_cmd_zoom_in,
@@ -219,6 +292,8 @@ for cmd_name, cmd in pairs(manscdp) do
     end
   end
 end
+
+local ptz_cmd_type = Field.new(plugin_info.name .. ".PTZCmd.Type")
 
 function proto.init()
   -- register all sub-dissectors
@@ -319,18 +394,37 @@ manscdp.Control.commands.DeviceControl.dissector = function(tvbuf, pktinfo, mans
     ptz_cmd_tree:add(pf_ptz_cmd_version,    ptz_cmd_tvb(1, 1));
     ptz_cmd_tree:add(pf_ptz_cmd_check_bits, ptz_cmd_tvb(1, 1));
 
-    ptz_cmd_tree:add(pf_ptz_cmd_zoom_out,   ptz_cmd_tvb(3, 1));
-    ptz_cmd_tree:add(pf_ptz_cmd_zoom_in,    ptz_cmd_tvb(3, 1));
-    ptz_cmd_tree:add(pf_ptz_cmd_up,         ptz_cmd_tvb(3, 1));
-    ptz_cmd_tree:add(pf_ptz_cmd_down,       ptz_cmd_tvb(3, 1));
-    ptz_cmd_tree:add(pf_ptz_cmd_left,       ptz_cmd_tvb(3, 1));
-    ptz_cmd_tree:add(pf_ptz_cmd_right,      ptz_cmd_tvb(3, 1));
+    ptz_cmd_tree:add(pf_ptz_cmd_type,       ptz_cmd_tvb(3, 1));
 
-    ptz_cmd_tree:add(pf_ptz_cmd_speed_pan,  ptz_cmd_tvb(4, 1));
-    ptz_cmd_tree:add(pf_ptz_cmd_speed_tilt, ptz_cmd_tvb(5, 1));
-    ptz_cmd_tree:add(pf_ptz_cmd_speed_zoom, ptz_cmd_tvb(6, 1));
+    if ptz_cmd_type().value == 0x8 then
+      -- Preset
+      ptz_cmd_tree:add(pf_ptz_cmd_preset_action, ptz_cmd_tvb(3, 1))
 
-    ptz_cmd_tree:add(pf_ptz_cmd_checksum,   ptz_cmd_tvb(7, 1));
+      ptz_cmd_tree:add(pf_ptz_cmd_preset_index,  ptz_cmd_tvb(5, 1))
+    elseif ptz_cmd_type().value == 0x4 then
+      -- FI
+      ptz_cmd_tree:add(pf_ptz_cmd_fi_focus_out, ptz_cmd_tvb(3, 1))
+      ptz_cmd_tree:add(pf_ptz_cmd_fi_focus_out, ptz_cmd_tvb(3, 1))
+      ptz_cmd_tree:add(pf_ptz_cmd_fi_iris_out,  ptz_cmd_tvb(3, 1))
+      ptz_cmd_tree:add(pf_ptz_cmd_fi_iris_out,  ptz_cmd_tvb(3, 1))
+
+      ptz_cmd_tree:add(pf_ptz_cmd_fi_focus_size, ptz_cmd_tvb(4, 1))
+      ptz_cmd_tree:add(pf_ptz_cmd_fi_iris_size,  ptz_cmd_tvb(5, 1))
+    else
+      -- PTZ
+      ptz_cmd_tree:add(pf_ptz_cmd_zoom_out,   ptz_cmd_tvb(3, 1));
+      ptz_cmd_tree:add(pf_ptz_cmd_zoom_in,    ptz_cmd_tvb(3, 1));
+      ptz_cmd_tree:add(pf_ptz_cmd_up,         ptz_cmd_tvb(3, 1));
+      ptz_cmd_tree:add(pf_ptz_cmd_down,       ptz_cmd_tvb(3, 1));
+      ptz_cmd_tree:add(pf_ptz_cmd_left,       ptz_cmd_tvb(3, 1));
+      ptz_cmd_tree:add(pf_ptz_cmd_right,      ptz_cmd_tvb(3, 1));
+
+      ptz_cmd_tree:add(pf_ptz_cmd_speed_pan,  ptz_cmd_tvb(4, 1));
+      ptz_cmd_tree:add(pf_ptz_cmd_speed_tilt, ptz_cmd_tvb(5, 1));
+      ptz_cmd_tree:add(pf_ptz_cmd_speed_zoom, ptz_cmd_tvb(6, 1));
+
+      ptz_cmd_tree:add(pf_ptz_cmd_checksum,   ptz_cmd_tvb(7, 1));
+    end
   end
 end
 
